@@ -1,0 +1,498 @@
+.game-box {
+
+  background-color: #222;
+  overflow: auto;
+}
+
+
+
+
+.row-container {
+  display: flex;
+}
+
+.player {
+  align-items: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+
+.player:not(.current-player) .hand {
+  filter: blur(7px);
+}
+
+
+.hand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  overflow-x: auto; /* Enable horizontal scrolling */
+  flex-wrap: nowrap; /* Prevent cards from wrapping to the next line */
+}
+
+.board {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  overflow-x: auto; /* Enable horizontal scrolling */
+}
+
+.board-main {
+  border: 3px solid #000;
+}
+
+.hand-slot,
+.board-slot {
+  width: 120px;
+  height: 180px;
+  margin: 10px;
+  border: 1px solid black;
+  border-radius: 10px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.board-slot {
+  position: relative;
+}
+
+
+.board-slot .empty-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #d3d3d3;
+  border-radius: 10px;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  text-align: center;
+  border-radius: 10px;
+  position: relative;
+}
+
+.hp {
+  margin-bottom: 10px;
+}
+
+button {
+  font-size: 16px;
+  cursor: pointer;
+}
+
+
+.card img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.deck-image {
+  width: 100px;
+  height: auto;
+  
+}
+
+
+.card.sacrificing {
+  filter: grayscale(100%);
+}
+
+
+.turn-info {
+  background-color: #222;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.turn-info h4 {
+  font-family: "Courier New", monospace;
+  font-size: 24px;
+  color: #ffbf00; /* Inscryption's gold/yellow color */
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: 10px;
+}
+
+.turn-info h5 {
+  font-family: "Courier New", monospace;
+  font-size: 18px;
+  color: #ffbf00; /* Inscryption's gold/yellow color */
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: 20px;
+}
+
+
+
+.hand-slot {
+  /* Add the following properties */
+  transition: transform 0.3s ease-in-out;
+}
+
+
+.hand-slot:hover {
+  /* Add the hover effect */
+  transform: scale(1.05);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+
+
+@keyframes slide-in {
+  0% {
+    transform: translateX(-200px) rotate(-90deg); /* Start offscreen and rotated */
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) rotate(0); /* End in final position and upright */
+    opacity: 1;
+  }
+}
+
+.hand-slot {
+  /* Add the following properties */
+  transition: transform 0.3s ease-in-out;
+  /* Set animation duration to 0.5s and delay to 0s by default */
+  animation: slide-in 0.5s ease-out 0s both; 
+}
+
+/* Increase the delay for each subsequent card */
+.hand-slot:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.hand-slot:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.hand-slot:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+/* And so on... */
+
+.hand-slot:hover {
+  /* Add the hover effect */
+  transform: scale(1.05);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.hand {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;  /* If you want cards to wrap to the next line when the width gets too small */
+  overflow: auto;  /* Add scroll if cards wrap and extend beyond container height */
+}
+
+
+.card-drawn{
+  animation: pop-out 0.5s forwards;
+}
+
+@keyframes pop-out {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-20px); }
+}
+
+button:active .end-turn-button svg {
+  transform: translateY(2px);
+}
+
+
+.card-bounce-down {
+  animation-name: cardBounceDown;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
+}
+
+@keyframes cardBounceDown {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(40px);  /* Increase this to make the bounce lower */
+  }
+  70% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);  /* Keep the card at the bottom after the bounce */
+  }
+}
+
+
+
+.card-bounce-up {
+  animation-name: cardBounceUp;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
+}
+
+@keyframes cardBounceUp {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-40px);  /* Increase this to make the bounce higher */
+  }
+  70% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(0);  /* Keep the card at the top after the bounce */
+  }
+}
+
+.shake {
+  animation: shake 0.5s linear;
+}
+
+@keyframes shake {
+  0% { transform: translate(0); }
+  10% { transform: translate(-2px, 2px); }
+  20% { transform: translate(2px, -2px); }
+  30% { transform: translate(-2px, -2px); }
+  40% { transform: translate(2px, 2px); }
+  50% { transform: translate(-2px, 2px); }
+  60% { transform: translate(2px, -2px); }
+  70% { transform: translate(-2px, -2px); }
+  80% { transform: translate(2px, 2px); }
+  90% { transform: translate(-2px, 2px); }
+  100% { transform: translate(0); }
+}
+
+@keyframes card-destroy {
+  0% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: rotateY(90deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes card-destroy {
+  0% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: rotateY(90deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(180deg);
+    opacity: 0;
+  }
+}
+
+.card-destroy {
+  animation: card-destroy 2s forwards;
+}
+
+.card-destroy .card-image {
+  transform-style: preserve-3d;
+}
+
+.player1-stats {
+  width: 200px;
+  height: auto;
+  background-color: #222;
+  color: #fff;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-family: "Courier New", monospace;
+  text-align: center;
+  position: relative;
+}
+
+.player1-stats::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.player1-stats .hp {
+  font-size: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.player1-stats .hp-bar {
+  height: 10px;
+  background-color: #f00;
+  border-radius: 5px;
+}
+
+.player1-stats button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  font-family: "Courier New", monospace;
+  font-size: 20px;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  
+}
+
+.player1-stats button:hover {
+  background-color: #666;
+}
+
+.player1-stats h3 {
+  font-size: 24px; /* Adjust the desired font size */
+}
+
+.deck {
+  position: relative;
+  padding: 10px;
+}
+
+.deck-content {
+  position: relative;
+}
+
+.deck-count {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: black;
+  padding: 4px 8px;
+  font-size: 50px;
+  font-weight: bold;
+  border-radius: 4px;
+  z-index: 1;
+  -webkit-text-stroke: 2px white;
+}
+
+
+
+.player2-stats {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
+
+.player2-stats .hp {
+  font-size: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.player2-stats .hp-bar {
+  height: 10px;
+  background-color: #f00;
+  border-radius: 5px;
+}
+
+.player2-stats button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  font-family: "Courier New", monospace;
+  font-size: 20px;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  
+}
+
+.player2-stats button:hover {
+  background-color: #666;
+}
+
+.player2-stats h3 {
+  font-size: 24px; /* Adjust the desired font size */
+}
+
+
+
+.end-turn-container {
+  display: flex;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.selected-card img {
+  background-color: yellow;
+  transform: scale(1.1); /* This makes the image slightly larger */
+  transition: transform 0.3s ease-in-out; /* This animates the change */
+}
+
+.squirrel-deck-count {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: black;
+  padding: 4px 8px;
+  font-size: 50px;
+  font-weight: bold;
+  border-radius: 4px;
+  z-index: 1;
+  -webkit-text-stroke: 2px white;
+}
+
