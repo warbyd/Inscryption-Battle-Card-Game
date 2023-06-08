@@ -13,8 +13,6 @@ function Game() {
   const [player1Board, setPlayer1Board] = useState(Array(4).fill(null));
   const [player2Board, setPlayer2Board] = useState(Array(4).fill(null));
   const [currentPlayer, setCurrentPlayer] = useState(1);
-  const [player1Health, setPlayer1Health] = useState(10);
-  const [player2Health, setPlayer2Health] = useState(10);
   const [isPlayingCard, setIsPlayingCard] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [squirrelDeck, setSquirrelDeck] = useState([])
@@ -26,6 +24,7 @@ function Game() {
   const [isPlayer1Turn, setIsPlayer1Turn] = useState(true);
   const [isPlayer2Turn, setIsPlayer2Turn] = useState(false);
   const [selectedCardIndex, setSelectedCardIndex] = useState(null);
+  const [balanceScale, setBalanceScale] = useState(0);
   
 
 
@@ -72,6 +71,7 @@ function Game() {
 
 const initializeDecks = (data, squirrelCards) => {
   console.log('Initializing decks...');
+  console.log('Initial squirrelCards:', squirrelCards);
   const shuffledDeck = shuffleArray(data.map(card => ({ ...card, sacrificing: false })));
   console.log('Deck after adding sacrificing state:', shuffledDeck);
   const sharedDeck = shuffledDeck.slice(0, data.length - 4);
@@ -107,32 +107,68 @@ const initializeDecks = (data, squirrelCards) => {
     return shuffledArray;
   };
   
+  const drawSpecificCard = (deck, prop, value) => {
+    console.log('Drawing specific card...');
+    for (let i = 0; i < deck.length; i++) {
+      if (deck[i][prop] === value) {
+        return deck.splice(i, 1)[0];
+      }
+    }
+  };
+  
   const drawRandomCards = (deck, numCards) => {
     console.log('Drawing random cards...');
     const shuffledDeck = shuffleArray(deck);
-    const drawnCards = shuffledDeck.slice(0, numCards);
+    let drawnCards = [];
+  
+    const cardWithSacrificeValueOne = drawSpecificCard(shuffledDeck, 'sacrificeCardsNeeded', 1);
+    if (cardWithSacrificeValueOne) {
+      drawnCards.push(cardWithSacrificeValueOne);
+      numCards--;
+    }
+  
+    drawnCards = [...drawnCards, ...shuffledDeck.slice(0, numCards)];
     console.log('Drawn cards:', drawnCards);
     return drawnCards;
   };
   
   const initializeHands = (sharedDeck) => {
     console.log('Initializing hands...');
+  
+    // First draw a card with sacrificeCardsNeeded value of 1.
+    const cardWithSacrificeValueOne = drawSpecificCard(sharedDeck, 'sacrificecardsneeded', 1);
+  
+    // Then draw 2 more random cards.
+    const player1RandomCards = drawRandomCards(sharedDeck, 2);
+  
     const player1Hand = [
-      ...drawRandomCards(sharedDeck, 3),
-      { ...squirrelDeck[0], type: 'Squirrel', sacrificing: false },
+      cardWithSacrificeValueOne, 
+      ...player1RandomCards,
+      { ...squirrelDeck[0], type: 'Squirrel', sacrificing: false, attack: 0, defense: 1 },
     ];
+  
     console.log('Player 1 hand after adding sacrificing state:', player1Hand);
+  
+    // Repeat for player 2.
+    const cardWithSacrificeValueOneForPlayer2 = drawSpecificCard(sharedDeck, 'sacrificecardsneeded', 1);
+    const player2RandomCards = drawRandomCards(sharedDeck, 2);
+  
     const player2Hand = [
-      ...drawRandomCards(sharedDeck, 3),
-      { ...squirrelDeck[0], type: 'Squirrel', sacrificing: false },
+      cardWithSacrificeValueOneForPlayer2,
+      ...player2RandomCards,
+      { ...squirrelDeck[0], type: 'Squirrel', sacrificing: false, attack: 0, defense: 1 },
     ];
+  
     console.log('Player 2 hand after adding sacrificing state:', player2Hand);
+  
     setPlayer1Hand([...player1Hand]);
     setPlayer2Hand([...player2Hand]);
   
     setPlayer1HasDrawnCard(false);
     setPlayer2HasDrawnCard(false);
   };
+  
+  
   
 
   
@@ -288,14 +324,18 @@ const placeCardOnBoard = (slotIndex) => {
 const handleSlotClick = (player, slotIndex) => {
   console.log('Slot clicked. Player:', player, ', Index:', slotIndex);
 
+  // If the clicked player isn't the current player, return
+  if (player !== currentPlayer) {
+    console.log('Cannot place card on other player\'s board');
+    return;
+  }
+
   const playerBoard = player === 1 ? player1Board : player2Board;
   const setPlayerBoard = player === 1 ? setPlayer1Board : setPlayer2Board;
 
-  // If a card has been selected and the clicked slot is either empty or has a card that is sacrificing, place the card
   if (selectedCardIndex !== null && (playerBoard[slotIndex] === null || playerBoard[slotIndex].sacrificing)) {
     placeCardOnBoard(slotIndex);
   } else if ((player === 1 && player1Board[slotIndex]) || (player === 2 && player2Board[slotIndex])) {
-    // If the slot isn't empty, toggle the 'sacrificing' state of the card
     const updatedBoard = [...playerBoard];
     const card = updatedBoard[slotIndex];
 
@@ -310,6 +350,7 @@ const handleSlotClick = (player, slotIndex) => {
     setSacrificedCards([]);
   }
 };
+
 
 
   const endTurn = () => {
@@ -348,7 +389,7 @@ const handleSlotClick = (player, slotIndex) => {
   }, duration)
 );
 
-const attackPhase = async (attackingBoard, defendingBoard, setDefendingBoard, setAttackingBoard, setDefendingHealth) => {
+const attackPhase = async (attackingBoard, defendingBoard, setDefendingBoard, setAttackingBoard, setBalanceScale) => {
   let totalDamage = 0;
   let updatedDefendingBoard = [...defendingBoard];
   let updatedAttackingBoard = [...attackingBoard];
@@ -371,13 +412,26 @@ const attackPhase = async (attackingBoard, defendingBoard, setDefendingBoard, se
       console.log('Mantis is attacking adjacent cards.');
       let leftCard = null;
       let rightCard = null;
-
+    
       if (index > 0) {
         leftCard = defendingBoard[index - 1];
+        if (leftCard) {
+          console.log(`Mantis is attacking the left opponent card with name: ${leftCard.name}, defense: ${leftCard.defense}, attack: ${leftCard.attack}`);
+          // Rest of the code for Mantis attack on the left card
+        } else {
+          console.log('No left opponent card to attack.');
+        }
       }
-
+    
       if (index < defendingBoard.length - 1) {
         rightCard = defendingBoard[index + 1];
+        if (rightCard) {
+          console.log(`Mantis is attacking the right opponent card with name: ${rightCard.name}, defense: ${rightCard.defense}, attack: ${rightCard.attack}`);
+          // Rest of the code for Mantis attack on the right card
+        } else {
+          console.log('No right opponent card to attack.');
+        }
+
       }
 
       // Attack left card if it exists
@@ -571,21 +625,27 @@ if (rightCard) {
             updatedDefendingBoard[index] = updatedOpponentCard;
           }
         }
+
+        
         
         
       } else {
         // There is no defending card
-        console.log('No opponent card to defend. Dealing direct damage to player.');
+        console.log('No opponent card to defend. Adjusting scale.');
         totalDamage += card.attack;
-      }
+        console.log('Total damage:', totalDamage);
+  }
     }
   }
 
-  setDefendingHealth((prevHealth) => {
-    const newHealth = prevHealth - totalDamage;
-    console.log(`After damage, defending player's health is ${newHealth}`);
-    return newHealth;
-  });
+  console.log('Updating balance scale...');
+  console.log(`Previous balance scale: ${balanceScale}`);
+  console.log(`Total damage done: ${totalDamage}`);
+  setBalanceScale(totalDamage);
+  console.log('Balance scale updated.');
+
+ 
+
 
   setDefendingBoard(updatedDefendingBoard);
   setAttackingBoard(updatedAttackingBoard);
@@ -599,14 +659,23 @@ if (rightCard) {
 const handleAttack = async () => {
   if (currentPlayer === 1) {
     console.log("Player 1 is attacking");
-    console.log(`Player 2's health before attack: ${player2Health}`);
-    await attackPhase(player1Board, player2Board, setPlayer2Board, setPlayer1Board, setPlayer2Health);
+    console.log(`Balance before attack: ${balanceScale}`);
+    await attackPhase(player1Board, player2Board, setPlayer2Board, setPlayer1Board, (damage) => {
+      console.log(`Increasing balance scale by ${damage}`);
+      setBalanceScale((prevScale) => prevScale + damage); // Increase the balance scale by damage
+    });
   } else {
     console.log("Player 2 is attacking");
-    console.log(`Player 1's health before attack: ${player1Health}`);
-    await attackPhase(player2Board, player1Board, setPlayer1Board, setPlayer2Board, setPlayer1Health);
+    console.log(`Balance before attack: ${balanceScale}`);
+    await attackPhase(player2Board, player1Board, setPlayer1Board, setPlayer2Board, (damage) => {
+      console.log(`Decreasing balance scale by ${damage}`);
+      setBalanceScale((prevScale) => prevScale - damage); // Decrease the balance scale by damage
+    });
   }
 };
+
+
+
 
 
 
@@ -628,122 +697,132 @@ const handleAttack = async () => {
 
 return (
   <div className="turn-info">
-  <h4>{currentPlayer === 1 ? "Player 1's Turn" : "Player 2's Turn"}</h4>
-  <h5>Turn: {turnNumber}</h5>
+    <h4>{currentPlayer === 1 ? "Player 1's Turn" : "Player 2's Turn"}</h4>
+    <h5>Turn: {turnNumber}</h5>
     <div className="game-box">
       <div className="container">
-      <div className="player1-stats">
-  <div className="hp">
-    <div className="hp-bar" style={{ width: `${(player1Health / 10) * 100}%`, height: '40px' }}>
-      <div className="hp-text">{player1Health}</div>
-    </div>
-  </div>
-  <button className={`end-turn-button ${currentPlayer === 1 ? '' : 'disabled'}`} onClick={currentPlayer === 1 ? endTurn : null}>
-    End Turn
-  </button>
+        <div className="player-stats">
+          {/* Balance Scale */}
+          <div className="balance-scale">
+  <div className="balance-scale-bar"></div>
+  <div 
+    className={`balance-scale-fill ${balanceScale < 0 ? 'negative' : ''}`} 
+    style={{ 
+      width: `${Math.abs(balanceScale) * 10}%`, 
+      right: balanceScale < 0 ? '50%' : 'auto',
+      left: balanceScale >= 0 ? '50%' : 'auto'
+    }}></div>
+  <div className="balance-scale-text">{balanceScale}</div>
 </div>
 
-          <div className="row-container">
+
+
+
+
+
+
+
+          <button className={`end-turn-button ${currentPlayer === 1 ? '' : 'disabled'}`} onClick={currentPlayer === 1 ? endTurn : null}>
+            End Turn
+          </button>
+        </div>
+
+        <div className="row-container">
+          {/* Player 1 Deck */}
           <div className="deck" onClick={() => drawCard(1, false)}>
-  <div className="deck-content">
-    <img className={`deck-image ${isCardDrawn ? 'card-drawn' : ''}`} src="Deck.png" alt="Deck" />
-    <p className="deck-count">{player1Deck.length}</p>
-  </div>
-</div>
-
-<div className="deck squirrel-deck" onClick={() => drawCard(1, true)}>
+            <div className="deck-content">
+              <img className={`deck-image ${isCardDrawn ? 'card-drawn' : ''}`} src="Deck.png" alt="Deck" />
+              <p className="deck-count">{player1Deck.length}</p>
+            </div>
+          </div>
+          {/* Player 1 Squirrel Deck */}
+          <div className="deck squirrel-deck" onClick={() => drawCard(1, true)}>
   <img className="deck-image" src="SquirrelDeck.png" alt="Squirrel Deck" />
   <p className="squirrel-deck-count">{squirrelDeck.length}</p>
 </div>
+       
 
-            <div className={`hand ${currentPlayer === 1 ? '' : 'disabled'}`}>
-  {player1Hand.map((card, index) => (
-    <div
-      key={index}
-      onClick={() => playCard(1, index)}
-      className={`hand-slot ${currentPlayer === 2 ? 'enemy-card' : ''} ${selectedCardIndex === index ? 'selected-card' : ''}`}
-    >
-      <Card card={card} />
-    </div>
-  ))}
-</div>
+
+
+
+
+          {/* Player 1 Hand */}
+          <div className={`hand ${currentPlayer === 1 ? '' : 'disabled'}`}>
+            {player1Hand.map((card, index) => (
+              <div
+                key={index}
+                onClick={() => playCard(1, index)}
+                className={`hand-slot ${currentPlayer === 2 ? 'enemy-card' : ''} ${selectedCardIndex === index ? 'selected-card' : ''}`}
+              >
+                <Card card={card} />
+              </div>
+            ))}
           </div>
-          <div className="board">
-  {player1Board.map((card, index) => (
-    <div
-      key={index}
-      className={`board-slot ${currentPlayer === 2 ? 'card-bounce-down' : ''} ${currentPlayer === 1 ? 'shake' : ''} ${card && card.isDestroyed ? 'card-destroy' : ''}`}
-      onClick={() => handleSlotClick(1, index)}
-    >
-      <Card card={card} />
-    </div>
-  ))}
-</div>
-<div className={`board ${currentPlayer === 2 ? '' : 'disabled'}`}>
-  {player2Board.map((card, index) => (
-    <div
-      key={index}
-      className={`board-slot ${currentPlayer === 1 ? 'card-bounce-up' : ''} ${currentPlayer === 2 ? 'shake' : ''} ${card && card.isDestroyed ? 'card-destroy' : ''}`}
-      onClick={() => handleSlotClick(2, index)}
-    >
-      <Card card={card} />
-    </div>
-  ))}
-</div>
-
-
-
-
-
-
         </div>
-        
-          <div className="row-container">
-          <div className="deck" onClick={() => drawCard(2, false)}>
-  <div className="deck-content">
-    <img className={`deck-image ${isCardDrawn ? 'card-drawn' : ''}`} src="Deck.png" alt="Deck" />
-    <p className="deck-count">{player2Deck.length}</p>
-  </div>
-</div>
 
+        <div className="board">
+          {/* Player 1 Board */}
+          {player1Board.map((card, index) => (
+            <div
+              key={index}
+              className={`board-slot ${currentPlayer === 2 ? 'card-bounce-down' : ''} ${currentPlayer === 1 ? 'shake' : ''} ${card && card.isDestroyed ? 'card-destroy' : ''}`}
+              onClick={() => handleSlotClick(1, index)}
+            >
+              <Card card={card} />
+            </div>
+          ))}
+        </div>
+
+        <div className={`board ${currentPlayer === 2 ? '' : 'disabled'}`}>
+          {/* Player 2 Board */}
+          {player2Board.map((card, index) => (
+            <div
+              key={index}
+              className={`board-slot ${currentPlayer === 1 ? 'card-bounce-up' : ''} ${currentPlayer === 2 ? 'shake' : ''} ${card && card.isDestroyed ? 'card-destroy' : ''}`}
+              onClick={() => handleSlotClick(2, index)}
+            >
+              <Card card={card} />
+            </div>
+          ))}
+        </div>
+
+        <div className="row-container">
+          {/* Player 2 Deck */}
+          <div className="deck" onClick={() => drawCard(2, false)}>
+            <div className="deck-content">
+              <img className={`deck-image ${isCardDrawn ? 'card-drawn' : ''}`} src="Deck.png" alt="Deck" />
+              <p className="deck-count">{player2Deck.length}</p>
+            </div>
+          </div>
+          {/* Player 2 Squirrel Deck */}
 <div className="deck squirrel-deck" onClick={() => drawCard(2, true)}>
   <img className="deck-image" src="SquirrelDeck.png" alt="Squirrel Deck" />
   <p className="squirrel-deck-count">{squirrelDeck.length}</p>
 </div>
 
-
-            <div className={`hand ${currentPlayer === 2 ? '' : 'disabled'}`}>
-  {player2Hand.map((card, index) => (
-    <div
-      key={index}
-      onClick={() => playCard(2, index)}
-      className={`hand-slot ${currentPlayer === 1 ? 'enemy-card' : ''} ${selectedCardIndex === index ? 'selected-card' : ''}`}
-    >
-      <Card card={card} />
-    </div>
-  ))}
-</div>
-            
+          {/* Player 2 Hand */}
+          <div className={`hand ${currentPlayer === 2 ? '' : 'disabled'}`}>
+            {player2Hand.map((card, index) => (
+              <div
+                key={index}
+                onClick={() => playCard(2, index)}
+                className={`hand-slot ${currentPlayer === 1 ? 'enemy-card' : ''} ${selectedCardIndex === index ? 'selected-card' : ''}`}
+              >
+                <Card card={card} />
+              </div>
+            ))}
           </div>
-          <div className="player2-stats">
-  <div className="hp-bar" style={{ width: `${(player2Health / 20) * 100}%`, height: '40px' }}>
-    <div className="hp-text">{player2Health}</div>
-  </div>
-  
-  <div className="end-turn-container">
-    <button className={`end-turn-button ${currentPlayer === 2 ? '' : 'disabled'}`} onClick={currentPlayer === 2 ? endTurn : null}>
-      End Turn
-    </button>
-  </div>
-</div>
-
-
-
-
         </div>
         
+
+        <div className="end-turn-container">
+          <button className={`end-turn-button ${currentPlayer === 2 ? '' : 'disabled'}`} onClick={currentPlayer === 2 ? endTurn : null}>
+            End Turn
+          </button>
+        </div>
       </div>
-      
+    </div>
+  </div>
 );
             }
 

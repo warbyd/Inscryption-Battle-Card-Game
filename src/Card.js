@@ -15,6 +15,14 @@ function Card({ card }) {
     imageUrl = process.env.PUBLIC_URL + `/${card.name}${card.defense}Defense.png`;
   } else if (card.name === 'Porcupine' && card.defense === 1) {
     imageUrl = process.env.PUBLIC_URL + '/Porcupine1Defense.png';
+  } else if (card.name === 'Urayuli') {
+    if (card.defense === 1) {
+      imageUrl = process.env.PUBLIC_URL + '/Urayuli1Defense.png';
+    } else if (card.defense >= 2 && card.defense <= 6) {
+      imageUrl = process.env.PUBLIC_URL + `/Urayuli${card.defense}Defense.png`;
+    } else {
+      imageUrl = process.env.PUBLIC_URL + '/Urayuli.png';
+    }
   } else {
     imageUrl = process.env.PUBLIC_URL + `/${card.name}.png`;
   }
@@ -28,3 +36,4 @@ function Card({ card }) {
 }
 
 export default Card;
+
