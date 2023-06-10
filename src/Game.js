@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
+import GameOverPopup from './GameOverPopUp';
 import './Game.css';
 
 
@@ -23,6 +24,9 @@ function Game() {
   const [isCardDrawn, setIsCardDrawn] = useState(false);
   const [selectedCardIndex, setSelectedCardIndex] = useState(null);
   const [balanceScale, setBalanceScale] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [winner, setWinner] = useState(null);
+
   
 
 
@@ -65,7 +69,16 @@ function Game() {
     fetchData();
 }, []);
 
-  
+  useEffect(() => {
+  // Check if game is over whenever balanceScale changes
+  if (balanceScale <= -10) {
+    setGameOver(true);
+    setWinner(1);
+  } else if (balanceScale >= 10) {
+    setGameOver(true);
+    setWinner(2);
+  }
+}, [balanceScale]);
 
 const initializeDecks = (data, squirrelCards) => {
   console.log('Initializing decks...');
@@ -372,17 +385,38 @@ const endTurn = async () => {
 };
 
 
-const attackEmptySlot = (card, currentPlayer, setBalanceScale) => {
+const attackEmptySlot = (card, currentPlayer, setBalanceScale, setGameOver, setWinner, prevBalance) => {
   console.log(`${card} is attacking player directly. Adjusting balance scale by ${card.attack}`);
 
   if (currentPlayer === 1) {
     // Player 1 is attacking, so we decrease the balance scale
     setBalanceScale((prevBalance) => prevBalance - card.attack);
+
+    // Check if balance scale reaches -10 for Player 1
+    if (prevBalance - card.attack <= -10) {
+      setGameOver(true);
+      setWinner(1);
+      console.log('Player 1 wins!');
+    }
   } else if (currentPlayer === 2) {
     // Player 2 is attacking, so we increase the balance scale
     setBalanceScale((prevBalance) => prevBalance + card.attack);
+
+    // Check if balance scale reaches 10 for Player 2
+    if (prevBalance + card.attack >= 10) {
+      setGameOver(true);
+      setWinner(2);
+      console.log('Player 2 wins!');
+    }
   }
+
+  // Use the updated values of setGameOver and setWinner
+  console.log('Is game over?', gameOver);
+  console.log('Winner:', winner);
 };
+
+
+
 
 
 
@@ -428,7 +462,7 @@ const mantisAttack = (attackingCard, defendingBoard, index, currentPlayer, setBa
           updatedDefendingBoard[targetIndex] = null;
         }
       } else {
-        attackEmptySlot(attackingCard, currentPlayer, setBalanceScale);
+        attackEmptySlot(attackingCard, currentPlayer, setBalanceScale, setGameOver, setWinner);
       }
     }
   });
@@ -456,7 +490,8 @@ const attackPhase = async (
   defendingBoard,
   setDefendingBoard,
   setAttackingBoard,
-  setBalanceScale
+  setBalanceScale,
+  setWinner
 ) => {
   let updatedDefendingBoard = [...defendingBoard];
   let updatedAttackingBoard = [...attackingBoard];
@@ -488,7 +523,7 @@ const attackPhase = async (
 
     if (!defendingCard) {
       console.log('No defending card to attack');
-      attackEmptySlot(attackingCard, currentPlayer, setBalanceScale);
+      attackEmptySlot(attackingCard, currentPlayer, setBalanceScale, setGameOver, setWinner);
     } else {
       const updatedAttackingCard = { ...attackingCard };
       let updatedDefendingCard = { ...defendingCard };
@@ -536,14 +571,24 @@ const handleAttack = async () => {
   if (currentPlayer === 1) {
     console.log("Player 1 is attacking");
     console.log(`Balance before attack: ${balanceScale}`);
-    await attackPhase(player1Board, player2Board, setPlayer2Board, setPlayer1Board, setBalanceScale);
+    await attackPhase(player1Board, player2Board, setPlayer2Board, setPlayer1Board, setBalanceScale, setGameOver, setWinner);
   } else {
     console.log("Player 2 is attacking");
     console.log(`Balance before attack: ${balanceScale}`);
-    await attackPhase(player2Board, player1Board, setPlayer1Board, setPlayer2Board, setBalanceScale);
+    await attackPhase(player2Board, player1Board, setPlayer1Board, setPlayer2Board, setBalanceScale, setGameOver, setWinner);
   }
 };
 
+const playAgain = () => {
+  // Reset the state variables to their initial values
+  setGameOver(false);
+  setWinner(null);
+  setBalanceScale(0);
+  // Add any additional state variables you need to reset
+
+  // Reload the page to restart the game
+  window.location.reload();
+};
 
 
 
@@ -693,7 +738,10 @@ return (
             End Turn
           </button>
         </div>
-      </div>
+        {gameOver && (
+      <GameOverPopup winner={winner} playAgain={playAgain} />
+    )}
+  </div>
     </div>
   </div>
 );
