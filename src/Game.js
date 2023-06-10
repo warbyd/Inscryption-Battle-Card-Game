@@ -21,8 +21,6 @@ function Game() {
   const [turnNumber, setTurnNumber] = useState(1);
   const [sacrificedCards, setSacrificedCards] = useState([]);
   const [isCardDrawn, setIsCardDrawn] = useState(false);
-  const [isPlayer1Turn, setIsPlayer1Turn] = useState(true);
-  const [isPlayer2Turn, setIsPlayer2Turn] = useState(false);
   const [selectedCardIndex, setSelectedCardIndex] = useState(null);
   const [balanceScale, setBalanceScale] = useState(0);
   
@@ -72,26 +70,25 @@ function Game() {
 const initializeDecks = (data, squirrelCards) => {
   console.log('Initializing decks...');
   console.log('Initial squirrelCards:', squirrelCards);
-  const shuffledDeck = shuffleArray(data.map(card => ({ ...card, sacrificing: false })));
-  console.log('Deck after adding sacrificing state:', shuffledDeck);
-  const sharedDeck = shuffledDeck.slice(0, data.length - 4);
+  const shuffledDeck = shuffleArray([...data]);
   console.log('Shuffled deck:', shuffledDeck);
+  const sharedDeck = shuffledDeck.slice(0, data.length - 4);
   console.log('Shared deck:', sharedDeck);
 
-  const squirrelDeckWithSacrificingState = squirrelCards.map(card => ({ ...card }));
-  console.log('Squirrel deck after adding sacrificing state:', squirrelDeckWithSacrificingState);
+  console.log('Squirrel deck:', squirrelCards);
 
   // Log the name property of the first squirrel card
-  if (squirrelDeckWithSacrificingState.length > 0) {
-    console.log('Name of first squirrel card after adding sacrificing state:', squirrelDeckWithSacrificingState[0].name);
+  if (squirrelCards.length > 0) {
+    console.log('Name of first squirrel card:', squirrelCards[0].name);
   }
 
   setPlayer1Deck([...sharedDeck]);
   setPlayer2Deck([...sharedDeck]);
-  setSquirrelDeck([...squirrelDeckWithSacrificingState]);
+  setSquirrelDeck([...squirrelCards]);
 
   initializeHands([...sharedDeck]);
 };
+
 
 
 
@@ -173,7 +170,7 @@ const initializeDecks = (data, squirrelCards) => {
 
   
   
-  const drawCard = (playerNumber, isSquirrel) => {
+  const drawCard = (playerNumber, isSquirrel, forceDraw = false) => {
     console.log(`Player ${playerNumber} is attempting to draw a card...`);
   
     const playerHand = playerNumber === 1 ? player1Hand : player2Hand;
@@ -191,7 +188,7 @@ const initializeDecks = (data, squirrelCards) => {
           return;
         }
   
-        if (!hasDrawnCard && playerHand.length < 20) {
+        if ((!hasDrawnCard || forceDraw) && playerHand.length < 20) {
           console.log(`Player ${playerNumber} is drawing a card.`);
           const drawnCard = playerDeck[0];
           setPlayerHand(hand => [...hand, drawnCard]);
@@ -217,47 +214,54 @@ const initializeDecks = (data, squirrelCards) => {
       console.log('Deck is empty. Cannot draw a card.');
     }
   };
+  
 
-
-const playCard = (playerNumber, cardIndex) => {
-  // Check if it's player's turn
-  if (playerNumber !== currentPlayer) {
-    console.error(`It's not Player ${playerNumber}'s turn.`);
-    return;
-  }
-
-  const playerHand = playerNumber === 1 ? player1Hand : player2Hand;
-  const selectedCard = playerHand[cardIndex];
-
-  // Check if card is found in player's hand
-  if (!selectedCard) {
-    console.error(`No card found at index ${cardIndex} in Player ${playerNumber}'s hand.`);
-    return;
-  }
-
-  // If the card is already selected, unselect it
-  if (selectedCardIndex === cardIndex) {
-    setSelectedCardIndex(null);
-    console.log(`Player ${playerNumber} unselected the card.`);
-  } else {
-    // If the card is a squirrel card, it can be placed directly
-    if (selectedCard.type === 'Squirrel' || selectedCard.name === 'Squirrel') {
-      setSelectedCardIndex(cardIndex);
-      console.log(`Player ${playerNumber} selected a Squirrel card.`);
+  const playCard = (playerNumber, cardIndex) => {
+    // Check if it's player's turn
+    if (playerNumber !== currentPlayer) {
+      console.error(`It's not Player ${playerNumber}'s turn.`);
+      return;
+    }
+  
+    const playerHand = playerNumber === 1 ? player1Hand : player2Hand;
+    const selectedCard = playerHand[cardIndex];
+  
+    // Check if card is found in player's hand
+    if (!selectedCard) {
+      console.error(`No card found at index ${cardIndex} in Player ${playerNumber}'s hand.`);
+      return;
+    }
+  
+    // If the card is already selected, unselect it
+    if (selectedCardIndex === cardIndex) {
+      setSelectedCardIndex(null);
+      console.log(`Player ${playerNumber} unselected the card.`);
     } else {
-      const requiredSacrificeCount = selectedCard.sacrificecardsneeded;
-      const sacrificedCardsCount = playerNumber === 1 ? player1Board.filter(card => card && card.sacrificing).length : player2Board.filter(card => card && card.sacrificing).length;
-
-      // If the required number of cards have been sacrificed, card can be selected
-      if (sacrificedCardsCount === requiredSacrificeCount) {
+      // If the card is a squirrel card, it can be placed directly
+      if (selectedCard.type === 'Squirrel' || selectedCard.name === 'Squirrel') {
         setSelectedCardIndex(cardIndex);
-        console.log(`Player ${playerNumber} selected the card: ${selectedCard.name}`);
+        console.log(`Player ${playerNumber} selected a Squirrel card.`);
       } else {
-        console.log(`Player ${playerNumber} does not have the required number of sacrificed cards.`);
+        const requiredSacrificeCount = selectedCard.sacrificecardsneeded;
+        const sacrificedCardsCount = playerNumber === 1 ? player1Board.filter(card => card && card.sacrificing).length : player2Board.filter(card => card && card.sacrificing).length;
+  
+        // If the required number of cards have been sacrificed, card can be selected
+        if (sacrificedCardsCount >= requiredSacrificeCount) {
+          setSelectedCardIndex(cardIndex);
+          console.log(`Player ${playerNumber} selected the card: ${selectedCard.name}`);
+  
+          // After selecting the card, if it's a 'Pack Rat', draw a card from the player's deck
+          if (selectedCard.name === 'PackRat') {
+            drawCard(playerNumber, false, true);  // The third argument 'true' forces a card draw
+          }
+        } else {
+          console.log(`Player ${playerNumber} does not have the required number of sacrificed cards.`);
+        }
       }
     }
-  }
-};
+  };
+  
+  
    
 const placeCardOnBoard = (slotIndex) => {
   if (selectedCardIndex === null) return;
@@ -386,23 +390,65 @@ const porcupineDefense = (attackingCard, setAttackingBoard, index) => {
   console.log(`Porcupine card is being attacked. Dealing 1 damage to the attacking card.`);
   attackingCard.defense -= 1;
   console.log(`${attackingCard} defense is now ${attackingCard.defense}`);
-  
+
   if (attackingCard.defense <= 0) {
     console.log(`${attackingCard} has been destroyed'`);
     attackingCard.isDestroyed = true;
+
     setAttackingBoard(prevAttackingBoard => {
       const updatedAttackingBoard = [...prevAttackingBoard];
-      updatedAttackingBoard[index] = null;
+      updatedAttackingBoard[index] = {...attackingCard};  // Don't set to null immediately, just mark the card as destroyed
       return updatedAttackingBoard;
     });
   } else {
     setAttackingBoard(prevAttackingBoard => {
       const updatedAttackingBoard = [...prevAttackingBoard];
-      updatedAttackingBoard[index] = attackingCard;
+      updatedAttackingBoard[index] = {...attackingCard};
       return updatedAttackingBoard;
     });
   }
 };
+
+
+const mantisAttack = (attackingCard, defendingBoard, index, currentPlayer, setBalanceScale, setAttackingBoard) => {
+  const updatedDefendingBoard = [...defendingBoard];
+  const leftIndex = index - 1;
+  const rightIndex = index + 1;
+
+  [leftIndex, rightIndex].forEach((targetIndex) => {
+    if (targetIndex >= 0 && targetIndex < defendingBoard.length) {
+      const targetDefendingCard = updatedDefendingBoard[targetIndex];
+      if (targetDefendingCard) {
+        if (targetDefendingCard.name === 'Porcupine') {
+          porcupineDefense(attackingCard, setAttackingBoard, index);
+        }
+        targetDefendingCard.defense -= attackingCard.attack;
+        if (targetDefendingCard.defense <= 0) {
+          targetDefendingCard.isDestroyed = true;
+          updatedDefendingBoard[targetIndex] = null;
+        }
+      } else {
+        attackEmptySlot(attackingCard, currentPlayer, setBalanceScale);
+      }
+    }
+  });
+
+  return updatedDefendingBoard;
+};
+
+const adderAttack = (defendingCard, index, updatedDefendingBoard) => {
+  console.log('Adder card is attacking. Setting the defending card\'s defense to 0.');
+
+  if (defendingCard) {
+    defendingCard.defense = 0;
+    defendingCard.isDestroyed = true;
+    updatedDefendingBoard[index] = null;
+  }
+
+  return updatedDefendingBoard;
+};
+
+
 
 
 const attackPhase = async (
@@ -423,6 +469,19 @@ const attackPhase = async (
     }
 
     console.log(`Card at index ${index} is attacking. Card details:`, attackingCard);
+
+    // Mantis always attacks to left and right slots, no matter whether there's a defending card directly in front of it or not.
+    if (attackingCard.name === 'Mantis') {
+      updatedDefendingBoard = mantisAttack(attackingCard, updatedDefendingBoard, index, currentPlayer, setBalanceScale, setAttackingBoard);
+
+      // Check if the mantis has been destroyed after the attack
+      if (attackingCard.isDestroyed) {
+        updatedAttackingBoard[index] = null;  // Remove the mantis from the attacking board
+      }
+
+      continue;
+    }
+
     const defendingCard = updatedDefendingBoard[index];
     console.log('Defending card:', defendingCard);
     console.log('Updated defending board:', updatedDefendingBoard);
@@ -432,8 +491,8 @@ const attackPhase = async (
       attackEmptySlot(attackingCard, currentPlayer, setBalanceScale);
     } else {
       const updatedAttackingCard = { ...attackingCard };
-      const updatedDefendingCard = { ...defendingCard };
-
+      let updatedDefendingCard = { ...defendingCard };
+      
       if (defendingCard.name === 'Porcupine') {
         // Attacking a Porcupine card triggers its defense function
         porcupineDefense(attackingCard, setAttackingBoard, index);
@@ -441,6 +500,12 @@ const attackPhase = async (
           updatedAttackingBoard[index] = null; // Remove the attacking card from the board
         }
       }
+
+      if (attackingCard.name === 'Adder') {
+        updatedDefendingBoard = adderAttack(defendingCard, index, updatedDefendingBoard);
+        continue;
+      }
+      
       updatedDefendingCard.defense -= attackingCard.attack;
       console.log(attackingCard);
       console.log(`After attack, defending card's defense is ${updatedDefendingCard.defense}`);
@@ -461,9 +526,6 @@ const attackPhase = async (
   setAttackingBoard(updatedAttackingBoard);
   setDefendingBoard(updatedDefendingBoard);
 };
-
-
-
 
 
 

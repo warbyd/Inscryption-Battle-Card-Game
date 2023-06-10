@@ -1,4 +1,6 @@
 function Card({ card }) {
+  console.log('Card object:', card);
+  console.log(`${card ? card.name : 'Empty Slot'} destroyed: ${card && card.destroyed}`);
   if (!card) {
     return (
       <div className="card empty-slot"></div>
@@ -7,8 +9,7 @@ function Card({ card }) {
 
   let imageUrl;
 
-  if (card.isDestroyed) {
-    imageUrl = process.env.PUBLIC_URL + '/Deck.png';
+  if (card.destroyed) {
   } else if (card.type === 'Squirrel') {
     imageUrl = process.env.PUBLIC_URL + '/Squirrel.png';
   } else if (card.name === 'Wolf' && card.defense === 1) {
@@ -23,6 +24,46 @@ function Card({ card }) {
     } else {
       imageUrl = process.env.PUBLIC_URL + '/Urayuli.png';
     }
+  } else if (card.name === 'Amalgam') {
+    if (card.defense === 1) {
+      imageUrl = process.env.PUBLIC_URL + '/Amalgam1Defense.png';
+    } else if (card.defense >= 2 && card.defense <= 2) {
+      imageUrl = process.env.PUBLIC_URL + `/Amalgam${card.defense}Defense.png`;
+    } else {
+      imageUrl = process.env.PUBLIC_URL + '/Amalgam.png';
+    }
+  } else if (card.name === 'Pack rat') {
+    if (card.defense === 1) {
+      imageUrl = process.env.PUBLIC_URL + '/PackRat1Defense.png';
+    } else if (card.defense >= 2 && card.defense <= 1) {
+      imageUrl = process.env.PUBLIC_URL + `/PackRat${card.defense}Defense.png`;
+    } else {
+      imageUrl = process.env.PUBLIC_URL + '/PackRat.png';
+    }
+  } else if (card.name === 'Grizzly') {
+    if (card.defense === 1) {
+      imageUrl = process.env.PUBLIC_URL + '/Grizzly1Defense.png';
+    } else if (card.defense >= 2 && card.defense <= 5) {
+      imageUrl = process.env.PUBLIC_URL + `/Grizzly${card.defense}Defense.png`;
+    } else {
+      imageUrl = process.env.PUBLIC_URL + '/Grizzly.png';
+    }
+  } else if (card.name === 'River snapper') {
+    if (card.defense === 1) {
+      imageUrl = process.env.PUBLIC_URL + '/RiverSnapper1Defense.png';
+    } else if (card.defense >= 2 && card.defense <= 5) {
+      imageUrl = process.env.PUBLIC_URL + `/RiverSnapper${card.defense}Defense.png`;
+    } else {
+      imageUrl = process.env.PUBLIC_URL + '/RiverSnapper.png';
+    }
+  } else if (card.name === 'Dire wolf') {
+    if (card.defense === 1) {
+      imageUrl = process.env.PUBLIC_URL + '/DireWolf1Defense.png';
+    } else if (card.defense >= 2 && card.defense <= 4) {
+      imageUrl = process.env.PUBLIC_URL + `/DireWolf${card.defense}Defense.png`;
+    } else {
+      imageUrl = process.env.PUBLIC_URL + '/DireWolf.png';
+    }
   } else {
     imageUrl = process.env.PUBLIC_URL + `/${card.name}.png`;
   }
@@ -36,4 +77,3 @@ function Card({ card }) {
 }
 
 export default Card;
-
