@@ -217,19 +217,6 @@ const initializeDecks = (data, squirrelCards) => {
       console.log('Deck is empty. Cannot draw a card.');
     }
   };
-  
-
-
-
-
-  
-  
-
-  
-  
-
-  
-
 
 
 const playCard = (playerNumber, cardIndex) => {
@@ -271,9 +258,6 @@ const playCard = (playerNumber, cardIndex) => {
     }
   }
 };
-
-
-
    
 const placeCardOnBoard = (slotIndex) => {
   if (selectedCardIndex === null) return;
@@ -305,7 +289,10 @@ const placeCardOnBoard = (slotIndex) => {
     }
   });
   
-  setPlayerBoard(newBoard);
+  console.log('Before updating player board:', playerBoard);
+setPlayerBoard(newBoard);
+console.log('After updating player board:', playerBoard);
+
   setPlayerHand((hand) => {
     const newHand = [...hand];
     newHand.splice(selectedCardIndex, 1);
@@ -318,8 +305,6 @@ const placeCardOnBoard = (slotIndex) => {
 
   console.log('Placed card on the board.');
 };
-
-
 
 const handleSlotClick = (player, slotIndex) => {
   console.log('Slot clicked. Player:', player, ', Index:', slotIndex);
@@ -353,326 +338,152 @@ const handleSlotClick = (player, slotIndex) => {
 
 
 
-  const endTurn = () => {
-    if (currentPlayer === 1) {
-      setPlayer1HasDrawnCard(false); // Reset flag for player 1
-      setIsPlayer1Turn(false); // Set player 1 turn animation flag to false
-      setTimeout(() => {
-        console.log("Switching to Player 2's turn...");
-        setCurrentPlayer(2);
-        setIsPlayer2Turn(true); // Set player 2 turn animation flag to true
-      }, 0); // Switch to player 2 after a delay
-    } else if (currentPlayer === 2) {
-      setPlayer2HasDrawnCard(false); // Reset flag for player 2
-      setIsPlayer2Turn(false); // Set player 2 turn animation flag to false
-      setTimeout(() => {
-        console.log("Switching to Player 1's turn...");
-        setCurrentPlayer(1);
-        setIsPlayer1Turn(true); // Set player 1 turn animation flag to true
-      }, 0); // Switch to player 1 after a delay
-    }
+const endTurn = async () => {
+  setIsPlayingCard(false);
+  setTurnNumber((prevTurn) => {
+    const newTurnNumber = prevTurn + 1;
+    console.log(`Turn number: ${newTurnNumber}`);
+    return newTurnNumber;
+  });
+
+  if (currentPlayer === 1) {
+    setPlayer1HasDrawnCard(false);
+    setTimeout(async () => {
+      await handleAttack();
+      console.log("Player 1's board:", player1Board);
+      console.log("Player 2's board:", player2Board);
+      setCurrentPlayer(2);
+      console.log("Switching to Player 2's turn...");
+    }, 0);
+  } else if (currentPlayer === 2) {
+    setPlayer2HasDrawnCard(false);
+    setTimeout(async () => {
+      await handleAttack();
+      console.log("Player 1's board:", player1Board);
+      console.log("Player 2's board:", player2Board);
+      setCurrentPlayer(1);
+      console.log("Switching to Player 1's turn...");
+    }, 0);
+  }
+};
+
+
+const attackEmptySlot = (card, currentPlayer, setBalanceScale) => {
+  console.log(`${card} is attacking player directly. Adjusting balance scale by ${card.attack}`);
+
+  if (currentPlayer === 1) {
+    // Player 1 is attacking, so we decrease the balance scale
+    setBalanceScale((prevBalance) => prevBalance - card.attack);
+  } else if (currentPlayer === 2) {
+    // Player 2 is attacking, so we increase the balance scale
+    setBalanceScale((prevBalance) => prevBalance + card.attack);
+  }
+};
+
+
+
+const porcupineDefense = (attackingCard, setAttackingBoard, index) => {
+  console.log(`Porcupine card is being attacked. Dealing 1 damage to the attacking card.`);
+  attackingCard.defense -= 1;
+  console.log(`${attackingCard} defense is now ${attackingCard.defense}`);
   
-    setIsPlayingCard(false); // Reset the isPlayingCard state
-    setTurnNumber((prevTurn) => {
-      const newTurnNumber = prevTurn + 1;
-      console.log(`Turn number: ${newTurnNumber}`);
-      return newTurnNumber;
-    }); // Increment the turn number
-    handleAttack();
-  };
-
-  const delay = (duration) => new Promise((resolve) =>
-  setTimeout(() => {
-    resolve((oldState) => {
-      // ... update state based on oldState ...
+  if (attackingCard.defense <= 0) {
+    console.log(`${attackingCard} has been destroyed'`);
+    attackingCard.isDestroyed = true;
+    setAttackingBoard(prevAttackingBoard => {
+      const updatedAttackingBoard = [...prevAttackingBoard];
+      updatedAttackingBoard[index] = null;
+      return updatedAttackingBoard;
     });
-  }, duration)
-);
+  } else {
+    setAttackingBoard(prevAttackingBoard => {
+      const updatedAttackingBoard = [...prevAttackingBoard];
+      updatedAttackingBoard[index] = attackingCard;
+      return updatedAttackingBoard;
+    });
+  }
+};
 
-const attackPhase = async (attackingBoard, defendingBoard, setDefendingBoard, setAttackingBoard, setBalanceScale) => {
-  let totalDamage = 0;
+
+const attackPhase = async (
+  attackingBoard,
+  defendingBoard,
+  setDefendingBoard,
+  setAttackingBoard,
+  setBalanceScale
+) => {
   let updatedDefendingBoard = [...defendingBoard];
   let updatedAttackingBoard = [...attackingBoard];
 
-  console.log('Player is attacking');
-
   for (let index = 0; index < attackingBoard.length; index++) {
-    const card = attackingBoard[index];
-    if (!card || card.isDestroyed) {
+    const attackingCard = attackingBoard[index];
+    if (!attackingCard || attackingCard.isDestroyed) {
       console.log(`Slot at index ${index} has no card or the card has been destroyed. Moving to the next slot.`);
       continue;
     }
 
-    console.log(`Card at index ${index} is attacking. Card details:`, card);
-    const opponentCard = updatedDefendingBoard[index];
+    console.log(`Card at index ${index} is attacking. Card details:`, attackingCard);
+    const defendingCard = updatedDefendingBoard[index];
+    console.log('Defending card:', defendingCard);
+    console.log('Updated defending board:', updatedDefendingBoard);
 
-    
+    if (!defendingCard) {
+      console.log('No defending card to attack');
+      attackEmptySlot(attackingCard, currentPlayer, setBalanceScale);
+    } else {
+      const updatedAttackingCard = { ...attackingCard };
+      const updatedDefendingCard = { ...defendingCard };
 
-    if (card.name === 'Mantis') {
-      console.log('Mantis is attacking adjacent cards.');
-      let leftCard = null;
-      let rightCard = null;
-    
-      if (index > 0) {
-        leftCard = defendingBoard[index - 1];
-        if (leftCard) {
-          console.log(`Mantis is attacking the left opponent card with name: ${leftCard.name}, defense: ${leftCard.defense}, attack: ${leftCard.attack}`);
-          // Rest of the code for Mantis attack on the left card
-        } else {
-          console.log('No left opponent card to attack.');
+      if (defendingCard.name === 'Porcupine') {
+        // Attacking a Porcupine card triggers its defense function
+        porcupineDefense(attackingCard, setAttackingBoard, index);
+        if (attackingCard.defense <= 0) {
+          updatedAttackingBoard[index] = null; // Remove the attacking card from the board
         }
       }
-    
-      if (index < defendingBoard.length - 1) {
-        rightCard = defendingBoard[index + 1];
-        if (rightCard) {
-          console.log(`Mantis is attacking the right opponent card with name: ${rightCard.name}, defense: ${rightCard.defense}, attack: ${rightCard.attack}`);
-          // Rest of the code for Mantis attack on the right card
-        } else {
-          console.log('No right opponent card to attack.');
-        }
+      updatedDefendingCard.defense -= attackingCard.attack;
+      console.log(attackingCard);
+      console.log(`After attack, defending card's defense is ${updatedDefendingCard.defense}`);
 
-      }
-
-      // Attack left card if it exists
-if (leftCard) {
-  console.log(`Mantis is attacking the left opponent card with name: ${leftCard.name}, defense: ${leftCard.defense}, attack: ${leftCard.attack}`);
-  const updatedLeftCard = { ...leftCard };
-  updatedLeftCard.defense -= card.attack;
-  console.log(`After Mantis attack, left opponent card's defense is ${updatedLeftCard.defense}`);
-  if (updatedLeftCard.defense <= 0) {
-    console.log('Left opponent card has been destroyed');
-    updatedLeftCard.isDestroyed = true;
-    updatedDefendingBoard[index - 1] = updatedLeftCard;
-
-    await delay(2000);
-    updatedDefendingBoard[index - 1] = null;
-    setDefendingBoard([...updatedDefendingBoard]);
-  } else {
-    updatedDefendingBoard[index - 1] = updatedLeftCard;
-    console.log(`Updated left opponent card details:`, updatedLeftCard); // Log the updated card details
-  }
-
-  // Add Porcupine logic here
-  if (leftCard.name === 'Porcupine') {
-    console.log('Left opponent card is a Porcupine. Dealing 1 damage to the attacking card');
-    const updatedCard = { ...card };
-    updatedCard.defense -= 1;
-    console.log(`After Porcupine's defense, attacking card's defense is ${updatedCard.defense}`);
-    if (updatedCard.defense <= 0) {
-      console.log('Attacking card has been destroyed');
-      updatedCard.isDestroyed = true;
-      updatedAttackingBoard[index] = updatedCard;
-  
-      await delay(2000);
-      updatedAttackingBoard[index] = null;
-      setAttackingBoard([...updatedAttackingBoard]);
-      continue; // Skip to next iteration if Mantis has been destroyed
-    } else {
-      updatedAttackingBoard[index] = updatedCard;
-    }
-
-    // Check for Porcupine's ability after taking damage from the defending card
-    const updatedOpponentCardAfterAttack = { ...opponentCard };
-    updatedOpponentCardAfterAttack.defense -= updatedCard.attack; // Subtract the updated attack value of the attacking card
-    console.log(`After Porcupine's defense, opponent card's defense is ${updatedOpponentCardAfterAttack.defense}`);
-    if (updatedOpponentCardAfterAttack.defense <= 0) {
-      console.log('Opponent card has been destroyed');
-      updatedOpponentCardAfterAttack.isDestroyed = true;
-      updatedDefendingBoard[index] = updatedOpponentCardAfterAttack;
-
-      await delay(2000);
-      updatedDefendingBoard[index] = null;
-      setDefendingBoard([...updatedDefendingBoard]);
-    } else {
-      updatedDefendingBoard[index] = updatedOpponentCardAfterAttack;
-    }
-  }
-} else if (index !== 0) { // Only deal direct damage if the left slot isn't beyond the board (index -1)
-  totalDamage += card.attack;
-  console.log('No left opponent card to defend. Dealing direct damage to player.');
-}
-
-// Attack right card if it exists
-if (rightCard) {
-  console.log(`Mantis is attacking the right opponent card with name: ${rightCard.name}, defense: ${rightCard.defense}, attack: ${rightCard.attack}`);
-  const updatedRightCard = { ...rightCard };
-  updatedRightCard.defense -= card.attack;
-  console.log(`After Mantis attack, right opponent card's defense is ${updatedRightCard.defense}`);
-  if (updatedRightCard.defense <= 0) {
-    console.log('Right opponent card has been destroyed');
-    updatedRightCard.isDestroyed = true;
-    updatedDefendingBoard[index + 1] = updatedRightCard;
-
-    await delay(2000);
-    updatedDefendingBoard[index + 1] = null;
-    setDefendingBoard([...updatedDefendingBoard]);
-  } else {
-    updatedDefendingBoard[index + 1] = updatedRightCard;
-    console.log(`Updated right opponent card details:`, updatedRightCard); // Log the updated card details
-  }
-
-  // Add Porcupine logic here
-  if (rightCard.name === 'Porcupine') {
-    console.log('Right opponent card is a Porcupine. Dealing 1 damage to the attacking card');
-    const updatedCard = { ...card };
-    updatedCard.defense -= 1;
-    console.log(`After Porcupine's defense, attacking card's defense is ${updatedCard.defense}`);
-    if (updatedCard.defense <= 0) {
-      console.log('Attacking card has been destroyed');
-      updatedCard.isDestroyed = true;
-      updatedAttackingBoard[index] = updatedCard;
-
-      await delay(2000);
-      updatedAttackingBoard[index] = null;
-      setAttackingBoard([...updatedAttackingBoard]);
-      continue; // Skip to next iteration if Mantis has been destroyed
-    } else {
-      updatedAttackingBoard[index] = updatedCard;
-    }
-
-
-
-    // Check for Porcupine's ability after taking damage from the defending card
-    const updatedOpponentCardAfterAttack = { ...opponentCard };
-    updatedOpponentCardAfterAttack.defense -= updatedCard.attack; // Subtract the updated attack value of the attacking card
-    console.log(`After Porcupine's defense, opponent card's defense is ${updatedOpponentCardAfterAttack.defense}`);
-    if (updatedOpponentCardAfterAttack.defense <= 0) {
-      console.log('Opponent card has been destroyed');
-      updatedOpponentCardAfterAttack.isDestroyed = true;
-      updatedDefendingBoard[index] = updatedOpponentCardAfterAttack;
-
-      await delay(2000);
-      updatedDefendingBoard[index] = null;
-      setDefendingBoard([...updatedDefendingBoard]);
-    } else {
-      updatedDefendingBoard[index] = updatedOpponentCardAfterAttack;
-    }
-  }
-} else if (index !== updatedDefendingBoard.length - 1) { // Only deal direct damage if the right slot isn't beyond the board (index +1)
-  totalDamage += card.attack;
-  console.log('No right opponent card to defend. Dealing direct damage to player.');
-}
-
-
-    } else {
-      if (opponentCard) {
-        console.log(`Opponent card at index ${index} is defending. Card details:`, opponentCard);
-
-        const updatedOpponentCard = { ...opponentCard };
-        updatedOpponentCard.defense -= card.attack;
-        console.log(`After attack, opponent card's defense is ${updatedOpponentCard.defense}`);
-
-        if (card.name === 'Adder') {
-          console.log('Adder is attacking, it will instantly destroy the opponent card.');
-          updatedOpponentCard.defense = 0;
-        } else {
-          updatedOpponentCard.defense -= card.attack;
-        }
-
-      
-
-        // Code for the defending card's special ability
-        if (opponentCard.name === 'Porcupine') {
-          console.log('Opponent card is a Porcupine. Dealing 1 damage to the attacking card');
-          const updatedCard = { ...card };
-          updatedCard.defense -= 1;
-          console.log(`After Porcupine's defense, attacking card's defense is ${updatedCard.defense}`);
-          
-          // Add condition to check if the attacking card is an "Adder"
-          if (card.name === 'Adder') {
-            console.log('Attacking card is an Adder. Destroying the Porcupine.');
-            opponentCard.defense = -1; // Reduces the defense below 0, effectively destroying the Porcupine
-          }
-        
-          if (updatedCard.defense <= 0) {
-            console.log('Attacking card has been destroyed');
-            updatedCard.isDestroyed = true;
-            updatedAttackingBoard[index] = updatedCard;
-        
-            await delay(2000);
-            updatedAttackingBoard[index] = null;
-            setAttackingBoard([...updatedAttackingBoard]);
-          } else {
-            updatedAttackingBoard[index] = updatedCard;
-          }
-
-          // Check for Porcupine's ability after taking damage from the defending card
-          const updatedOpponentCardAfterAttack = { ...opponentCard };
-          updatedOpponentCardAfterAttack.defense -= updatedCard.attack; // Subtract the updated attack value of the attacking card
-          if (updatedOpponentCardAfterAttack.defense <= 0) {
-            console.log('Opponent card has been destroyed');
-            updatedOpponentCardAfterAttack.isDestroyed = true;
-            updatedDefendingBoard[index] = updatedOpponentCardAfterAttack;
-
-            await delay(2000);
-            updatedDefendingBoard[index] = null;
-            setDefendingBoard([...updatedDefendingBoard]);
-          } else {
-            updatedDefendingBoard[index] = updatedOpponentCardAfterAttack;
-          }
-        } else {
-          // If the defending card's defense has dropped to 0 or less, remove it from the board
-          if (updatedOpponentCard.defense <= 0) {
-            console.log('Opponent card has been destroyed');
-            updatedOpponentCard.isDestroyed = true;
-            updatedDefendingBoard[index] = updatedOpponentCard;
-
-            await delay(2000);
-            updatedDefendingBoard[index] = null;
-            setDefendingBoard([...updatedDefendingBoard]);
-          } else {
-            updatedDefendingBoard[index] = updatedOpponentCard;
-          }
-        }
-
-        
-        
-        
+      if (updatedDefendingCard.defense <= 0) {
+        console.log('Defending card has been destroyed');
+        updatedDefendingCard.isDestroyed = true;
+        updatedDefendingBoard[index] = null;
       } else {
-        // There is no defending card
-        console.log('No opponent card to defend. Adjusting scale.');
-        totalDamage += card.attack;
-        console.log('Total damage:', totalDamage);
-  }
+        updatedDefendingBoard[index] = updatedDefendingCard;
+      }
+
+      console.log('Final updated attacking board:', updatedAttackingBoard);
+      console.log('Final updated defending board:', updatedDefendingBoard);
     }
   }
 
-  console.log('Updating balance scale...');
-  console.log(`Previous balance scale: ${balanceScale}`);
-  console.log(`Total damage done: ${totalDamage}`);
-  setBalanceScale(totalDamage);
-  console.log('Balance scale updated.');
-
- 
-
-
-  setDefendingBoard(updatedDefendingBoard);
   setAttackingBoard(updatedAttackingBoard);
+  setDefendingBoard(updatedDefendingBoard);
 };
 
 
 
 
-  
+
+
+
+
 
 const handleAttack = async () => {
   if (currentPlayer === 1) {
     console.log("Player 1 is attacking");
     console.log(`Balance before attack: ${balanceScale}`);
-    await attackPhase(player1Board, player2Board, setPlayer2Board, setPlayer1Board, (damage) => {
-      console.log(`Increasing balance scale by ${damage}`);
-      setBalanceScale((prevScale) => prevScale + damage); // Increase the balance scale by damage
-    });
+    await attackPhase(player1Board, player2Board, setPlayer2Board, setPlayer1Board, setBalanceScale);
   } else {
     console.log("Player 2 is attacking");
     console.log(`Balance before attack: ${balanceScale}`);
-    await attackPhase(player2Board, player1Board, setPlayer1Board, setPlayer2Board, (damage) => {
-      console.log(`Decreasing balance scale by ${damage}`);
-      setBalanceScale((prevScale) => prevScale - damage); // Decrease the balance scale by damage
-    });
+    await attackPhase(player2Board, player1Board, setPlayer1Board, setPlayer2Board, setBalanceScale);
   }
 };
+
+
+
 
 
 
