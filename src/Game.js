@@ -329,7 +329,7 @@ const handleSlotClick = (player, slotIndex) => {
 
   // If the clicked player isn't the current player, return
   if (player !== currentPlayer) {
-    console.log('Cannot place card on other player\'s board');
+    console.log("Cannot place card on other player's board");
     return;
   }
 
@@ -338,7 +338,10 @@ const handleSlotClick = (player, slotIndex) => {
 
   if (selectedCardIndex !== null && (playerBoard[slotIndex] === null || playerBoard[slotIndex].sacrificing)) {
     placeCardOnBoard(slotIndex);
-  } else if ((player === 1 && player1Board[slotIndex]) || (player === 2 && player2Board[slotIndex])) {
+  } else if (
+    (player === 1 && player1Board[slotIndex] && player1Board[slotIndex].name !== 'Boulder') ||
+    (player === 2 && player2Board[slotIndex] && player2Board[slotIndex].name !== 'Boulder')
+  ) {
     const updatedBoard = [...playerBoard];
     const card = updatedBoard[slotIndex];
 
@@ -353,6 +356,7 @@ const handleSlotClick = (player, slotIndex) => {
     setSacrificedCards([]);
   }
 };
+
 
 
 

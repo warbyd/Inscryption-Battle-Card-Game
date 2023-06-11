@@ -107,10 +107,13 @@ button {
   
 }
 
-
 .card.sacrificing {
   filter: grayscale(100%);
+  position: relative;
 }
+
+
+
 
 
 .turn-info {
