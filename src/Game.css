@@ -370,9 +370,35 @@ button:active .end-turn-button svg {
 
 .end-turn-container {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   margin-left: auto;
+  margin-top: 10px;
 }
+
+.end-turn-button {
+  font-family: 'Pixel', sans-serif;
+  font-size: 16px;
+  color: white; /* change the color here */
+  border: none;
+  background: transparent; /* remove the background color here */
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 50px;
+}
+
+.end-turn-button:hover {
+  opacity: 0.7; /* make the icon a bit transparent on hover */
+}
+
+.end-turn-button:disabled {
+  color: #aaa; /* make the icon a different color when disabled */
+  cursor: not-allowed; 
+}
+
+
 
 .selected-card img {
   background-color: yellow;
@@ -417,7 +443,7 @@ button:active .end-turn-button svg {
   -webkit-text-stroke: 2px white;
 }
 
-.balance-scale {
+/* .balance-scale {
   position: relative;
   width: 400px;
   height: 20px;
@@ -425,28 +451,28 @@ button:active .end-turn-button svg {
   border: 2px solid #333;
   margin: 0 auto;
   overflow: hidden;
-  border-radius: 10px; /* Add border-radius for curved edges */
-}
+  border-radius: 10px; /* Add border-radius for curved edges
+} */
 
-.balance-scale-bar {
+/* .balance-scale-bar {
   position: absolute;
   top: 0;
   left: 50%;
   height: 100%;
   border-left: 1px solid #333;
   border-radius: 50px; /* Add border-radius for curved edges */
-}
+/* } */
 
-.balance-scale-fill {
+/* .balance-scale-fill {
   position: absolute;
   top: 0;
   width: 0;
   height: 100%;
   background-color: green;
-  transition: all 0.5s ease-in-out;
-  border-radius: 10px; /* Add border-radius for curved edges */
-}
-
+  /* transition: all 0.5s ease-in-out; */
+  /* border-radius: 10px; Add border-radius for curved edges */ */
+/* }  */ 
+/* 
 .negative {
   background-color: red !important;
   left: 50%;
@@ -459,7 +485,7 @@ button:active .end-turn-button svg {
   transform: translate(-50%, -50%);
   font-size: 24px;
   font-weight: bold;
-}
+} */
 
 .game-over {
   filter: blur(8px);
@@ -521,4 +547,76 @@ button:active .end-turn-button svg {
 .game-over-box button:hover {
   background-color: #ff0044;
 }
+
+.combat-logs-container {
+  position: absolute;
+  left: 0;
+  width: 200px; /* Adjust width according to your needs */
+  height: 400px; /* Adjust height according to your needs */
+  background-color: white;
+  padding: 20px;
+  overflow-y: auto;
+  margin-left: 50px; /* Adjust margin to create some space between the board and the log */
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1); /* Optional: add some shadow to make it stand out */
+  border-radius: 15px; /* Add curved corners */
+  font-family: sans-serif;
+  color: #333; /* Dark text for retro feel */
+}
+
+.combat-logs {
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes typing {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.combat-log {
+  opacity: 0;
+  animation: typing 0.01s forwards; /* Adjust time according to your needs */
+}
+
+
+
+.balance-scale-vertical {
+  position: absolute;
+  height: 500px;
+  width: 100px; /* adjust the width here */
+  border: 2px solid #333;
+  border-radius: 20px; /* adjust the border-radius here */
+  right: 0;
+  margin-right: 50px;
+}
+
+
+
+.balance-scale-fill-vertical {
+  position: absolute;
+  width: 100%;
+  background-color: green;
+  transition: all 0.5s ease-in-out;
+
+}
+
+.balance-scale-fill-vertical.negative {
+  background-color: red !important;
+}
+
+.balance-scale-text-vertical {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  -webkit-text-stroke: 2px white; /* add for webkit browsers */
+}
+
+.blurred {
+  filter: blur(10px);
+}
+
 

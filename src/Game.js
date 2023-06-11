@@ -26,6 +26,10 @@ function Game() {
   const [balanceScale, setBalanceScale] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [combatLogs, setCombatLogs] = useState([]);
+
+
+
 
   
 
@@ -357,11 +361,14 @@ const handleSlotClick = (player, slotIndex) => {
 
 const endTurn = async () => {
   setIsPlayingCard(false);
+
   setTurnNumber((prevTurn) => {
     const newTurnNumber = prevTurn + 1;
     console.log(`Turn number: ${newTurnNumber}`);
     return newTurnNumber;
   });
+
+  setCombatLogs([]); // Clear the combat logs at the end of the turn
 
   if (currentPlayer === 1) {
     setPlayer1HasDrawnCard(false);
@@ -385,8 +392,11 @@ const endTurn = async () => {
 };
 
 
+
 const attackEmptySlot = (card, currentPlayer, setBalanceScale, setGameOver, setWinner, prevBalance) => {
-  console.log(`${card} is attacking player directly. Adjusting balance scale by ${card.attack}`);
+  const logMessage = `${card.name} is attacking player directly. Adjusting balance scale by ${card.attack}`;
+  console.log(logMessage);
+  handleCombat(logMessage);
 
   if (currentPlayer === 1) {
     // Player 1 is attacking, so we decrease the balance scale
@@ -396,7 +406,9 @@ const attackEmptySlot = (card, currentPlayer, setBalanceScale, setGameOver, setW
     if (prevBalance - card.attack <= -10) {
       setGameOver(true);
       setWinner(1);
-      console.log('Player 1 wins!');
+      const winLog = 'Player 1 wins!';
+      console.log(winLog);
+      handleCombat(winLog);
     }
   } else if (currentPlayer === 2) {
     // Player 2 is attacking, so we increase the balance scale
@@ -406,14 +418,13 @@ const attackEmptySlot = (card, currentPlayer, setBalanceScale, setGameOver, setW
     if (prevBalance + card.attack >= 10) {
       setGameOver(true);
       setWinner(2);
-      console.log('Player 2 wins!');
+      const winLog = 'Player 2 wins!';
+      console.log(winLog);
+      handleCombat(winLog);
     }
   }
 
-  // Use the updated values of setGameOver and setWinner
-  console.log('Is game over?', gameOver);
-  console.log('Winner:', winner);
-};
+}
 
 
 
@@ -421,12 +432,21 @@ const attackEmptySlot = (card, currentPlayer, setBalanceScale, setGameOver, setW
 
 
 const porcupineDefense = (attackingCard, setAttackingBoard, index) => {
-  console.log(`Porcupine card is being attacked. Dealing 1 damage to the attacking card.`);
+  const logMessage = `Porcupine card is being attacked. Dealing 1 damage to the attacking card.`;
+  console.log(logMessage);
+  handleCombat(logMessage);
+
   attackingCard.defense -= 1;
-  console.log(`${attackingCard} defense is now ${attackingCard.defense}`);
+
+  const defenseLog = `${attackingCard.name}'s defense is now ${attackingCard.defense}`;
+  console.log(defenseLog);
+  handleCombat(defenseLog);
 
   if (attackingCard.defense <= 0) {
-    console.log(`${attackingCard} has been destroyed'`);
+    const destroyedLog = `${attackingCard.name} has been destroyed'`;
+    console.log(destroyedLog);
+    handleCombat(destroyedLog);
+
     attackingCard.isDestroyed = true;
 
     setAttackingBoard(prevAttackingBoard => {
@@ -444,6 +464,7 @@ const porcupineDefense = (attackingCard, setAttackingBoard, index) => {
 };
 
 
+
 const mantisAttack = (attackingCard, defendingBoard, index, currentPlayer, setBalanceScale, setAttackingBoard) => {
   const updatedDefendingBoard = [...defendingBoard];
   const leftIndex = index - 1;
@@ -453,11 +474,24 @@ const mantisAttack = (attackingCard, defendingBoard, index, currentPlayer, setBa
     if (targetIndex >= 0 && targetIndex < defendingBoard.length) {
       const targetDefendingCard = updatedDefendingBoard[targetIndex];
       if (targetDefendingCard) {
+        const attackLog = `${attackingCard.name} is attacking ${targetDefendingCard.name}`;
+        console.log(attackLog);
+        handleCombat(attackLog);
+
         if (targetDefendingCard.name === 'Porcupine') {
           porcupineDefense(attackingCard, setAttackingBoard, index);
         }
         targetDefendingCard.defense -= attackingCard.attack;
+
+        const defenseLog = `After attack, ${targetDefendingCard.name}'s defense is ${targetDefendingCard.defense}`;
+        console.log(defenseLog);
+        handleCombat(defenseLog);
+
         if (targetDefendingCard.defense <= 0) {
+          const destroyedLog = `${targetDefendingCard.name} has been destroyed`;
+          console.log(destroyedLog);
+          handleCombat(destroyedLog);
+
           targetDefendingCard.isDestroyed = true;
           updatedDefendingBoard[targetIndex] = null;
         }
@@ -470,17 +504,26 @@ const mantisAttack = (attackingCard, defendingBoard, index, currentPlayer, setBa
   return updatedDefendingBoard;
 };
 
+
 const adderAttack = (defendingCard, index, updatedDefendingBoard) => {
-  console.log('Adder card is attacking. Setting the defending card\'s defense to 0.');
+  const attackLog = 'Adder card is attacking. Setting the defending card\'s defense to 0.';
+  console.log(attackLog);
+  handleCombat(attackLog);
 
   if (defendingCard) {
     defendingCard.defense = 0;
     defendingCard.isDestroyed = true;
+    
+    const destroyedLog = `${defendingCard.name} has been destroyed by the Adder's attack`;
+    console.log(destroyedLog);
+    handleCombat(destroyedLog);
+
     updatedDefendingBoard[index] = null;
   }
 
   return updatedDefendingBoard;
 };
+
 
 
 
@@ -542,6 +585,9 @@ const attackPhase = async (
       }
       
       updatedDefendingCard.defense -= attackingCard.attack;
+      const attackLog = `${attackingCard.name} attacks ${defendingCard.name}. ${defendingCard.name}'s defense is now ${updatedDefendingCard.defense}`;
+      console.log(attackLog);
+      handleCombat(attackLog);
       console.log(attackingCard);
       console.log(`After attack, defending card's defense is ${updatedDefendingCard.defense}`);
 
@@ -549,6 +595,10 @@ const attackPhase = async (
         console.log('Defending card has been destroyed');
         updatedDefendingCard.isDestroyed = true;
         updatedDefendingBoard[index] = null;
+
+        const destroyedLog = `${defendingCard.name} has been destroyed`;
+        console.log(destroyedLog);
+        handleCombat(destroyedLog);
       } else {
         updatedDefendingBoard[index] = updatedDefendingCard;
       }
@@ -590,27 +640,12 @@ const playAgain = () => {
   window.location.reload();
 };
 
+const handleCombat = (message) => {
+  setCombatLogs((prevLogs) => [...prevLogs, message]);
+};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+const splitLogs = combatLogs.map(log => log.split(''));
 
 
 return (
@@ -620,29 +655,12 @@ return (
     <div className="game-box">
       <div className="container">
         <div className="player-stats">
-          {/* Balance Scale */}
-          <div className="balance-scale">
-  <div className="balance-scale-bar"></div>
-  <div 
-    className={`balance-scale-fill ${balanceScale < 0 ? 'negative' : ''}`} 
-    style={{ 
-      width: `${Math.abs(balanceScale) * 10}%`, 
-      right: balanceScale < 0 ? '50%' : 'auto',
-      left: balanceScale >= 0 ? '50%' : 'auto'
-    }}></div>
-  <div className="balance-scale-text">{balanceScale}</div>
-</div>
-
-
-
-
-
-
-
-
+        <div className="end-turn-container">
           <button className={`end-turn-button ${currentPlayer === 1 ? '' : 'disabled'}`} onClick={currentPlayer === 1 ? endTurn : null}>
-            End Turn
-          </button>
+            {/* Here we replace the play symbol with the crossed swords emoji */}
+    ⚔️
+  </button>
+        </div>
         </div>
 
         <div className="row-container">
@@ -665,7 +683,7 @@ return (
 
 
           {/* Player 1 Hand */}
-          <div className={`hand ${currentPlayer === 1 ? '' : 'disabled'}`}>
+          <div className={`hand ${currentPlayer === 1 ? '' : 'blurred'}`}>
             {player1Hand.map((card, index) => (
               <div
                 key={index}
@@ -677,6 +695,36 @@ return (
             ))}
           </div>
         </div>
+
+        <div className="combat-logs-container">
+      <div className="combat-logs">
+        <h3>Combat Logs:</h3>
+        {splitLogs.map((log, index) => (
+          <p key={index}>
+            {log.map((char, index) => (
+              <span key={index} style={{ animationDelay: `${index * 0.05}s` }} className="combat-log">{char}</span>
+            ))}
+          </p>
+        ))}
+      </div>
+    </div>
+
+        <div className="balance-scale-vertical">
+            <div className="balance-scale-bar-vertical"></div>
+            <div
+              className={`balance-scale-fill-vertical ${balanceScale < 0 ? 'negative' : ''}`}
+              style={{
+              height: `${Math.abs(balanceScale) * 5}%`,
+              bottom: balanceScale < 0 ? '50%' : 'auto',
+              top: balanceScale >= 0 ? '50%' : 'auto',
+              }}
+        ></div>
+        <div className="balance-scale-text-vertical">{balanceScale}</div>
+</div>
+
+
+  
+
 
         <div className="board">
           {/* Player 1 Board */}
@@ -691,6 +739,10 @@ return (
           ))}
         </div>
 
+    
+
+
+
         <div className={`board ${currentPlayer === 2 ? '' : 'disabled'}`}>
           {/* Player 2 Board */}
           {player2Board.map((card, index) => (
@@ -703,6 +755,9 @@ return (
             </div>
           ))}
         </div>
+    
+
+    
 
         <div className="row-container">
           {/* Player 2 Deck */}
@@ -713,13 +768,13 @@ return (
             </div>
           </div>
           {/* Player 2 Squirrel Deck */}
-<div className="deck squirrel-deck" onClick={() => drawCard(2, true)}>
-  <img className="deck-image" src="SquirrelDeck.png" alt="Squirrel Deck" />
-  <p className="squirrel-deck-count">{squirrelDeck.length}</p>
-</div>
+        <div className="deck squirrel-deck" onClick={() => drawCard(2, true)}>
+        <img className="deck-image" src="SquirrelDeck.png" alt="Squirrel Deck" />
+        <p className="squirrel-deck-count">{squirrelDeck.length}</p>
+        </div>
 
           {/* Player 2 Hand */}
-          <div className={`hand ${currentPlayer === 2 ? '' : 'disabled'}`}>
+          <div className={`hand ${currentPlayer === 2 ? '' : 'blurred'}`}>
             {player2Hand.map((card, index) => (
               <div
                 key={index}
@@ -731,13 +786,15 @@ return (
             ))}
           </div>
         </div>
-        
+
 
         <div className="end-turn-container">
           <button className={`end-turn-button ${currentPlayer === 2 ? '' : 'disabled'}`} onClick={currentPlayer === 2 ? endTurn : null}>
-            End Turn
-          </button>
-        </div>
+          
+    {/* Here we replace the play symbol with the crossed swords emoji */}
+    ⚔️
+  </button>
+</div>
         {gameOver && (
       <GameOverPopup winner={winner} playAgain={playAgain} />
     )}

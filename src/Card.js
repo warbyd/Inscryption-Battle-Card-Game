@@ -32,7 +32,7 @@ function Card({ card }) {
     } else {
       imageUrl = process.env.PUBLIC_URL + '/Amalgam.png';
     }
-  } else if (card.name === 'Pack rat') {
+  } else if (card.name === 'PackRat') {
     if (card.defense === 1) {
       imageUrl = process.env.PUBLIC_URL + '/PackRat1Defense.png';
     } else if (card.defense >= 2 && card.defense <= 1) {
@@ -48,7 +48,7 @@ function Card({ card }) {
     } else {
       imageUrl = process.env.PUBLIC_URL + '/Grizzly.png';
     }
-  } else if (card.name === 'River snapper') {
+  } else if (card.name === 'RiverSnapper') {
     if (card.defense === 1) {
       imageUrl = process.env.PUBLIC_URL + '/RiverSnapper1Defense.png';
     } else if (card.defense >= 2 && card.defense <= 5) {
@@ -56,7 +56,7 @@ function Card({ card }) {
     } else {
       imageUrl = process.env.PUBLIC_URL + '/RiverSnapper.png';
     }
-  } else if (card.name === 'Dire wolf') {
+  } else if (card.name === 'DireWolf') {
     if (card.defense === 1) {
       imageUrl = process.env.PUBLIC_URL + '/DireWolf1Defense.png';
     } else if (card.defense >= 2 && card.defense <= 4) {
