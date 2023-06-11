@@ -28,24 +28,7 @@ function Game() {
   const [winner, setWinner] = useState(null);
   const [combatLogs, setCombatLogs] = useState([]);
 
-
-
-
   
-
-
-
-
-
-
-
-  
-  
-
-
-  
-
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,8 +46,20 @@ function Game() {
                 console.log('Name of first squirrel card:', squirrelCardsResponse[0].name);
             }
 
-            setCardsData(regularCardsResponse);
-            initializeDecks(regularCardsResponse, squirrelCardsResponse);
+            // Separate the "Boulder" cards from the regular cards
+            const boulderCards = regularCardsResponse.filter(card => card.name === "Boulder");
+            const nonBoulderCards = regularCardsResponse.filter(card => card.name !== "Boulder");
+
+            setCardsData(nonBoulderCards);
+            initializeDecks(nonBoulderCards, squirrelCardsResponse);
+
+            // After fetching the data and initializing the decks...
+            if (boulderCards.length >= 4) {
+                // Set "Boulder" cards at the desired indices
+                setPlayer1Board([null, boulderCards[0], null, boulderCards[1]]);
+                setPlayer2Board([boulderCards[2], null, boulderCards[3], null]);
+            }
+
         } catch (error) {
             console.error('Error fetching or initializing data:', error);
         }
@@ -72,6 +67,8 @@ function Game() {
 
     fetchData();
 }, []);
+
+
 
   useEffect(() => {
   // Check if game is over whenever balanceScale changes
@@ -611,9 +608,6 @@ const attackPhase = async (
   setAttackingBoard(updatedAttackingBoard);
   setDefendingBoard(updatedDefendingBoard);
 };
-
-
-
 
 
 
